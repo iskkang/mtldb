@@ -1,24 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-function App() {
-  const [data, setData] = useState('');
+const App = () => {
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    axios.get('/global-exports')
-      .then(response => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/inspectID`, { user: 'example' }, { withCredentials: true });
         setData(response.data);
-      })
-      .catch(error => {
+      } catch (error) {
         console.error('Error fetching data:', error);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
 
   return (
-    <div className="App">
-      <h1>{data ? JSON.stringify(data) : 'Loading...'}</h1>
+    <div>
+      <h1>Data from API:</h1>
+      <pre>{JSON.stringify(data, null, 2)}</pre>
     </div>
   );
-}
+};
 
 export default App;
