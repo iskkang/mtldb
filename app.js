@@ -3,7 +3,7 @@ const axios = require('axios');
 const cors = require('cors');  // cors 패키지 추가
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 
 // CORS 설정 추가
 app.use(cors());
