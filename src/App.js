@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Line } from 'react-chartjs-2';
-import 'chart.js/auto';
+import Chart from 'chart.js/auto';
 
 const fetchData = async (url, setData) => {
   try {
