@@ -1,89 +1,71 @@
-const express = require('express');
-const axios = require('axios');
-const cors = require('cors');  // cors 패키지 추가
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { Line } from 'react-chartjs-2';
+import Chart from 'chart.js/auto';
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// CORS 설정 추가
-app.use(cors({
-  origin: '*', // 모든 도메인에서의 요청 허용
-  methods: ['GET'] // 허용할 HTTP 메서드
-}));
-
-// Global Exports 데이터 가져오기
-const fetchGlobalExports = async () => {
-  const url = "https://www.econdb.com/widgets/global-trade/data/?type=export&net=0&transform=0";
-  const response = await axios.get(url);
-  if (response.status === 200) {
-    const data = response.data;
-    if (data.plots && data.plots.length > 0) {
-      return data.plots[0].data;
-    }
+const fetchData = async (url, setData) => {
+  try {
+    const response = await axios.get(url);
+    setData(response.data);
+  } catch (error) {
+    console.error('Error fetching data:', error);
   }
-  return null;
 };
 
-// SCFI 데이터 가져오기
-const fetchScfi = async () => {
-  const url = "https://www.econdb.com/widgets/shanghai-containerized-index/data/";
-  const response = await axios.get(url);
-  if (response.status === 200) {
-    const data = response.data;
-    if (data.plots && data.plots.length > 0) {
-      return data.plots[0].data;
-    }
-  }
-  return null;
-};
+const transformData = (data) => {
+  if (!data || data.length === 0) return {};
 
-// Top Port Comparison 데이터 가져오기
-const fetchPortComparison = async () => {
-  const url = "https://www.econdb.com/widgets/top-port-comparison/data/";
-  const response = await axios.get(url);
-  if (response.status === 200) {
-    const data = response.data;
-    if (data.plots && data.plots.length > 0) {
-      return data.plots[0].data;
-    }
-  }
-  return null;
-};
+  const labels = data.map(item => new Date(item.Date).toLocaleDateString());
+  const values = data.map(item => item.Value);
 
-// 포트 데이터 가져오기
-const fetchPortData = async () => {
-  const url = "https://www.econdb.com/maritime/search/ports/?ab=-62.933895117588925%2C-138.84538637063213%2C75.17530232751466%2C150.31476987936844&center=17.35344883620718%2C5.734691754366622";
-  const headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Value',
+        data: values,
+        fill: false,
+        backgroundColor: 'rgba(75,192,192,1)',
+        borderColor: 'rgba(75,192,192,1)',
+      },
+    ],
   };
-  const response = await axios.get(url, { headers });
-  if (response.status === 200) {
-    return response.data.response.docs;
-  }
-  return null;
 };
 
-// 엔드포인트 설정
-app.get('/global-exports', async (req, res) => {
-  const data = await fetchGlobalExports();
-  res.json(data);
-});
+const App = () => {
+  const [globalExports, setGlobalExports] = useState([]);
+  const [scfi, setScfi] = useState([]);
+  const [portComparison, setPortComparison] = useState([]);
+  const [portData, setPortData] = useState([]);
 
-app.get('/scfi', async (req, res) => {
-  const data = await fetchScfi();
-  res.json(data);
-});
+  useEffect(() => {
+    fetchData('http://localhost:3000/global-exports', setGlobalExports);
+    fetchData('http://localhost:3000/scfi', setScfi);
+    fetchData('http://localhost:3000/port-comparison', setPortComparison);
+    fetchData('http://localhost:3000/port-data', setPortData);
+  }, []);
 
-app.get('/port-comparison', async (req, res) => {
-  const data = await fetchPortComparison();
-  res.json(data);
-});
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <div>
+        <h2>Global Exports</h2>
+        <Line data={transformData(globalExports)} />
+      </div>
+      <div>
+        <h2>SCFI</h2>
+        <Line data={transformData(scfi)} />
+      </div>
+      <div>
+        <h2>Top Port Comparison</h2>
+        <Line data={transformData(portComparison)} />
+      </div>
+      <div>
+        <h2>Port Data</h2>
+        <Line data={transformData(portData)} />
+      </div>
+    </div>
+  );
+};
 
-app.get('/port-data', async (req, res) => {
-  const data = await fetchPortData();
-  res.json(data);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+export default App;
